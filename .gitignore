@@ -1,2 +1,2 @@
-outputs/
-resources/chipsec-1.13.17/logs/
+outputs/*
+resources/chipsec-1.13.17/logs/*
