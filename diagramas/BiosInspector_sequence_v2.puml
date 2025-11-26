@@ -1,0 +1,85 @@
+@startuml BiosInspector_flow
+title Fluxo de execucao BIOS Inspector
+
+actor User as U
+participant "main()" as M
+participant "BiosInspectorApp" as App
+participant "ChipsecExtractor" as Chip
+participant "UefiExtractExtractor" as Ux
+participant "PeCoffAnalyzer" as Pe
+participant "ThreadPool" as TP
+participant "StringExtractor" as SE
+participant "SensitiveMatcher" as SM
+participant "QilingExecutor" as QE
+participant "ManifestDAO" as MDAO
+participant "ReportDAO" as RDAO
+
+U -> M : executa programa\ncom parametros CLI
+M -> App : run(argc, argv)
+
+activate App
+App -> App : parseArgs(cfg)\nprepareWorkspace(cfg)
+
+App -> Chip : extract(cfg, modules)\n(Fase 1, CHIPSEC)
+activate Chip
+Chip --> App : modules parciais
+deactivate Chip
+
+App -> Ux : extract(cfg, modules)\n(Fase 2, UEFIExtract)
+activate Ux
+Ux --> App : modules finais
+deactivate Ux
+
+App -> App : cleanupInputArtifacts(cfg)
+
+App -> Pe : analyzeModules(cfg, modules, records)\n(Fase 3, PE COFF)
+activate Pe
+Pe --> App : records com PeInfo
+deactivate Pe
+
+App -> App : buildModuleCatalog(cfg, modules, manifest)
+
+group buildModuleCatalog
+    App -> SE : StringExtractor stringExtractor
+    App -> SM : SensitiveMatcher sensitiveMatcher\nloadPatterns(cfg)
+    App -> QE : QilingExecutor qiling
+
+    App -> TP : cria ThreadPool(cfg.threads)
+    activate TP
+
+    loop para cada ModuleRecord rec em records
+        App -> TP : enqueue tarefa para rec
+        activate TP
+        TP -> SE : extractStrings(cfg, rec)
+        SE --> TP
+
+        TP -> SM : run(cfg, rec)
+        SM --> TP
+
+        alt cfg.enableQiling
+            TP -> QE : executeModule(cfg, rec.path)
+            QE --> TP : ExecutionStatus
+        end
+        deactivate TP
+    end
+
+    TP --> App : todas tarefas concluidas\n(destrutor do ThreadPool)
+    App -> App : manifest.modules = records
+end
+
+App -> MDAO : save(cfg, manifest)
+activate MDAO
+MDAO --> App
+deactivate MDAO
+
+App -> RDAO : exportReports(cfg, manifest)
+activate RDAO
+RDAO --> App
+deactivate RDAO
+
+App --> M : return 0
+deactivate App
+
+M --> U : fim da execucao, arquivos em outputs
+
+@enduml

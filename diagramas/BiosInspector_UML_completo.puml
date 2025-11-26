@@ -1,0 +1,220 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "biosinspector" {
+
+  class Config {
+    +firmwarePath : fs::path
+    +workspaceDir : fs::path
+    +chipsecScript : fs::path
+    +uefiExtractExe : fs::path
+    +qilingScript : fs::path
+    +sensitiveStringsFile : fs::path
+    +sensitiveGuidsFile : fs::path
+    +threads : int
+    +minAsciiLen : int
+    +minUtf16Len : int
+    +qilingTimeoutSec : int
+    +enableQiling : bool
+    +modulesDir : fs::path
+    +chipsecOutDir : fs::path
+    +uefiExtractOutDir : fs::path
+    +stringsOutDir : fs::path
+    +sensitiveOutDir : fs::path
+    +qilingLogsDir : fs::path
+    +manifestPath : fs::path
+    +reportsDir : fs::path
+  }
+
+  class SectionInfo {
+    +name : string
+    +rva : uint32_t
+    +vsize : uint32_t
+    +rawPtr : uint32_t
+    +rawSize : uint32_t
+    +entropy : double
+    +sha256_hex : string
+  }
+
+  class PeInfo {
+    +is_pe : bool
+    +is64 : bool
+    +error : string
+    +machine : uint16_t
+    +characteristics : uint16_t
+    +subsystem : uint16_t
+    +imageBase : uint64_t
+    +entryRva : uint32_t
+    +sizeOfImage : uint32_t
+    +sizeOfHeaders : uint32_t
+    +numSections : uint32_t
+    +file_sha256_hex : string
+    +sections : vector<SectionInfo>
+    +related_guids : vector<string>
+  }
+
+  class StringEntry {
+    +offset : uint64_t
+    +value : string
+    +isUtf16 : bool
+  }
+
+  class SensitiveMatch {
+    +pattern : string
+    +offset : uint64_t
+    +isUtf16 : bool
+    +isGuid : bool
+  }
+
+  enum ExecutionStatusKind {
+    NotRun
+    Success
+    Error
+    Timeout
+  }
+
+  class ExecutionStatus {
+    +status : ExecutionStatusKind
+    +exitCode : int
+    +shortLog : string
+    +logFileOnDisk : fs::path
+  }
+
+  class ModuleRecord {
+    +path : fs::path
+    +fileSize : uint64_t
+    +lastWriteTime : optional<time_t>
+    +pe : PeInfo
+    +strings : vector<StringEntry>
+    +sensitiveMatches : vector<SensitiveMatch>
+    +execStatus : ExecutionStatus
+  }
+
+  class Manifest {
+    +toolName : string
+    +toolVersion : string
+    +firmwarePath : fs::path
+    +modules : vector<ModuleRecord>
+  }
+
+  interface IModuleExtractor {
+    +extract(cfg : Config, outModules : vector<fs::path>) : bool
+  }
+
+  class ChipsecExtractor {
+    +extract(cfg : Config, outModules : vector<fs::path>) : bool
+  }
+
+  class UefiExtractExtractor {
+    +extract(cfg : Config, outModules : vector<fs::path>) : bool
+  }
+
+  class PeCoffAnalyzer {
+    +analyzeModules(cfg : Config,
+                    modules : vector<fs::path>,
+                    outRecords : vector<ModuleRecord>&) : void
+  }
+
+  class StringExtractor {
+    +extractStrings(cfg : Config, mod : ModuleRecord&) : void
+  }
+
+  class SensitiveMatcher {
+    -m_stringPatterns : vector<string>
+    -m_guidPatterns : vector<string>
+    +loadPatterns(cfg : Config) : void
+    +run(cfg : Config, mod : ModuleRecord&) : void
+  }
+
+  class QilingExecutor {
+    +executeModule(cfg : Config, modulePath : fs::path) : ExecutionStatus
+  }
+
+  class ManifestDAO {
+    +save(cfg : Config, manifest : Manifest) : void
+  }
+
+  class ReportDAO {
+    +exportReports(cfg : Config, manifest : Manifest) : void
+  }
+
+  class ThreadPool {
+    -m_workers : vector<std::thread>
+    -m_tasks : queue<function<void()>>
+    -m_mutex : std::mutex
+    -m_cv : std::condition_variable
+    -m_stop : bool
+    +ThreadPool(numThreads : size_t)
+    +~ThreadPool()
+    +enqueue(task : function<void()>) : void
+    -workerLoop() : void
+  }
+
+  class BiosInspectorApp {
+    +run(argc : int, argv : char**) : int
+    -parseArgs(argc : int, argv : char**, cfg : Config&) : bool
+    -prepareWorkspace(cfg : Config) : void
+    -buildModuleCatalog(cfg : Config,
+                        modulePaths : vector<fs::path>,
+                        manifest : Manifest&) : void
+  }
+
+  ' Herancas
+  IModuleExtractor <|.. ChipsecExtractor
+  IModuleExtractor <|.. UefiExtractExtractor
+
+  ' Composicoes
+  Manifest "1" o-- "*" ModuleRecord
+  ModuleRecord "1" o-- "1" PeInfo
+  ModuleRecord "1" o-- "*" StringEntry
+  ModuleRecord "1" o-- "*" SensitiveMatch
+  ModuleRecord "1" o-- "1" ExecutionStatus
+  PeInfo "1" o-- "*" SectionInfo
+
+  ' Dependencias principais
+  BiosInspectorApp ..> Config
+  BiosInspectorApp ..> ChipsecExtractor
+  BiosInspectorApp ..> UefiExtractExtractor
+  BiosInspectorApp ..> PeCoffAnalyzer
+  BiosInspectorApp ..> StringExtractor
+  BiosInspectorApp ..> SensitiveMatcher
+  BiosInspectorApp ..> QilingExecutor
+  BiosInspectorApp ..> ManifestDAO
+  BiosInspectorApp ..> ReportDAO
+  BiosInspectorApp ..> ThreadPool
+  BiosInspectorApp ..> Manifest
+  BiosInspectorApp ..> ModuleRecord
+
+  PeCoffAnalyzer ..> Config
+  PeCoffAnalyzer ..> ModuleRecord
+  PeCoffAnalyzer ..> PeInfo
+  PeCoffAnalyzer ..> SectionInfo
+
+  StringExtractor ..> Config
+  StringExtractor ..> ModuleRecord
+  StringExtractor ..> StringEntry
+
+  SensitiveMatcher ..> Config
+  SensitiveMatcher ..> ModuleRecord
+  SensitiveMatcher ..> SensitiveMatch
+  SensitiveMatcher ..> StringEntry
+  SensitiveMatcher ..> PeInfo
+
+  QilingExecutor ..> Config
+  QilingExecutor ..> ModuleRecord
+  QilingExecutor ..> ExecutionStatus
+
+  ManifestDAO ..> Config
+  ManifestDAO ..> Manifest
+
+  ReportDAO ..> Config
+  ReportDAO ..> Manifest
+
+  ChipsecExtractor ..> Config
+  ChipsecExtractor ..> ModuleRecord
+
+  UefiExtractExtractor ..> Config
+  UefiExtractExtractor ..> ModuleRecord
+}
+
+@enduml

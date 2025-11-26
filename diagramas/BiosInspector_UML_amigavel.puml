@@ -1,0 +1,198 @@
+@startuml BiosInspector_clean
+left to right direction
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide circle
+
+package "Core model" {
+  class Config {
+    firmwarePath    : path
+    workspaceDir    : path
+    chipsecScript   : path
+    uefiExtractExe  : path
+    qilingScript    : path
+    sensitiveStringsFile : path
+    sensitiveGuidsFile   : path
+    threads         : int
+    minAsciiLen     : int
+    minUtf16Len     : int
+    qilingTimeoutSec: int
+    enableQiling    : bool
+    modulesDir      : path
+    chipsecOutDir   : path
+    uefiExtractOutDir : path
+    stringsOutDir   : path
+    sensitiveOutDir : path
+    qilingLogsDir   : path
+    manifestPath    : path
+    reportsDir      : path
+  }
+
+  class Manifest {
+    toolName     : string
+    toolVersion  : string
+    firmwarePath : path
+    modules      : vector<ModuleRecord>
+  }
+
+  class ModuleRecord {
+    path             : path
+    fileSize         : uint64_t
+    lastWriteTime    : optional<time_t>
+    pe               : PeInfo
+    strings          : vector<StringEntry>
+    sensitiveMatches : vector<SensitiveMatch>
+    execStatus       : ExecutionStatus
+  }
+
+  class PeInfo {
+    is_pe          : bool
+    is64           : bool
+    error          : string
+    machine        : uint16_t
+    characteristics: uint16_t
+    subsystem      : uint16_t
+    imageBase      : uint64_t
+    entryRva       : uint32_t
+    sizeOfImage    : uint32_t
+    sizeOfHeaders  : uint32_t
+    numSections    : uint32_t
+    file_sha256_hex: string
+    sections       : vector<SectionInfo>
+    related_guids  : vector<string>
+  }
+
+  class SectionInfo {
+    name       : string
+    rva        : uint32_t
+    vsize      : uint32_t
+    rawPtr     : uint32_t
+    rawSize    : uint32_t
+    entropy    : double
+    sha256_hex : string
+  }
+
+  class StringEntry {
+    offset  : uint64_t
+    value   : string
+    isUtf16 : bool
+  }
+
+  class SensitiveMatch {
+    pattern : string
+    offset  : uint64_t
+    isUtf16 : bool
+    isGuid  : bool
+  }
+
+  enum ExecutionStatusKind {
+    NotRun
+    Success
+    Error
+    Timeout
+  }
+
+  class ExecutionStatus {
+    status       : ExecutionStatusKind
+    exitCode     : int
+    shortLog     : string
+    logFileOnDisk: path
+  }
+
+  Manifest "1" o-- "0..*" ModuleRecord
+  ModuleRecord "1" o-- "1" PeInfo
+  PeInfo "1" o-- "0..*" SectionInfo
+  ModuleRecord "1" o-- "0..*" StringEntry
+  ModuleRecord "1" o-- "0..*" SensitiveMatch
+  ModuleRecord "1" o-- "1" ExecutionStatus
+  ExecutionStatus ..> ExecutionStatusKind
+}
+
+package "Extraction" {
+  interface IModuleExtractor {
+    +extract(cfg : Config, outModules : vector<path>) : bool
+  }
+
+  class ChipsecExtractor {
+    +extract(cfg : Config, outModules : vector<path>) : bool
+  }
+
+  class UefiExtractExtractor {
+    +extract(cfg : Config, outModules : vector<path>) : bool
+  }
+
+  IModuleExtractor <|.. ChipsecExtractor
+  IModuleExtractor <|.. UefiExtractExtractor
+}
+
+package "Analysis" {
+  class PeCoffAnalyzer {
+    +analyzeModules(cfg : Config,
+                    modules : vector<path>,
+                    outRecords : vector<ModuleRecord>) : void
+  }
+
+  class StringExtractor {
+    +extractStrings(cfg : Config, mod : ModuleRecord) : void
+  }
+
+  class SensitiveMatcher {
+    -m_stringPatterns : vector<string>
+    -m_guidPatterns   : vector<string>
+    +loadPatterns(cfg : Config) : void
+    +run(cfg : Config, mod : ModuleRecord) : void
+  }
+
+  class QilingExecutor {
+    +executeModule(cfg : Config, modulePath : path) : ExecutionStatus
+  }
+}
+
+package "Infrastructure" {
+  class ThreadPool {
+    -m_workers : vector<thread>
+    -m_tasks   : queue<function<void()>>
+    -m_mutex   : mutex
+    -m_cv      : condition_variable
+    -m_stop    : bool
+    +ThreadPool(numThreads : size_t)
+    +enqueue(task : function<void()>) : void
+  }
+}
+
+package "Persistence" {
+  class ManifestDAO {
+    +save(cfg : Config, manifest : Manifest) : void
+  }
+
+  class ReportDAO {
+    +exportReports(cfg : Config, manifest : Manifest) : void
+  }
+}
+
+package "Application" {
+  class BiosInspectorApp {
+    -parseArgs(argc : int, argv : char**, cfg : Config&) : bool
+    -prepareWorkspace(cfg : Config) : void
+    -buildModuleCatalog(cfg : Config,
+                        modulePaths : vector<path>,
+                        manifest : Manifest&) : void
+    +run(argc : int, argv : char**) : int
+  }
+}
+
+BiosInspectorApp o-- Config
+BiosInspectorApp o-- Manifest
+BiosInspectorApp ..> IModuleExtractor
+BiosInspectorApp ..> ChipsecExtractor
+BiosInspectorApp ..> UefiExtractExtractor
+BiosInspectorApp ..> PeCoffAnalyzer
+BiosInspectorApp ..> StringExtractor
+BiosInspectorApp ..> SensitiveMatcher
+BiosInspectorApp ..> QilingExecutor
+BiosInspectorApp ..> ThreadPool
+BiosInspectorApp ..> ManifestDAO
+BiosInspectorApp ..> ReportDAO
+
+@enduml
