@@ -10,20 +10,20 @@
 ---
 
 ## Contents
-- [Key Features](#key-features)
-- [Academic Work / PDF](#academic-work--pdf)
-- [Software Explanation](#software-explanation)
-- [Images & Examples](#images--examples)
-- [UML Diagram](#uml-diagram)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Command-line Options](#command-line-options)
-- [Output Structure](#output-structure)
-- [Sensitive Patterns & GUID Lists](#sensitive-patterns--guid-lists)
-- [Limitations & Roadmap](#limitations--roadmap)
-- [How to Cite](#how-to-cite)
-- [License](#license)
+- #key-features
+- #academic-work--pdf
+- #software-explanation
+- #images--examples
+- #uml-diagram
+- #requirements
+- #installation
+- #usage
+- #command-line-options
+- #output-structure
+- #sensitive-patterns--guid-lists
+- #limitations--roadmap
+- #how-to-cite
+- #license
 
 ---
 
@@ -39,7 +39,7 @@
 ---
 
 ## Academic Work / PDF
-- 📄 **Full report (PDF)** available (in Brazilian Portuguese) at: [BIOS_Inspector.pdf](./BIOS_Inspector.pdf)
+- 📄 **Full report (PDF)** available (in Brazilian Portuguese) at: ./BIOS_Inspector.pdf
 
 ---
 
@@ -70,51 +70,66 @@ All interaction is via **CLI** with parameters for firmware path, workspace, thr
 ---
 
 ## Images & Examples
-Below is a small gallery of artifacts and screens. Replace with higher-resolution images if desired.
+Below is a small gallery of artifacts and screens.
 
-![Overall pipeline](docs/img/page3_Image32.jpg)
+docs/img/page3_Image32.jpg
 
-![Module extraction (terminal)](docs/img/page3_Image34.jpg)
-
-
+docs/img/page3_Image34.jpg
 
 ---
 
 ## UML Diagram
 A placeholder for your UML diagram image:
 
-![UML Diagram](docs/img/uml_diagram.png)
-
+docs/img/uml_diagram.png
 
 ---
 
 ## Requirements
-- **OS**: Windows (current primary support)
-- **Compiler**: C++17 or newer
-- **Python**: for CHIPSEC/Qiling integration
-- **External tools** (already available here in this same project):
-  - CHIPSEC — https://github.com/chipsec/chipsec
-  - UEFIExtract — https://github.com/LongSoft/UEFITool
-  - Qiling — https://github.com/qilingframework/qiling
+  - **OS**: Windows (current primary support)
+  - **Compiler**: C++17 or newer  
+  - The project is built using **MinGW‑w64** (from **MSYS2**) through VS Code tasks.
+  - **VS Code** with the **C/C++ extension**
+  - **Python**: required for CHIPSEC and Qiling integration
+  - CHIPSEC — https://github.com/chipsec/chipsec (a version of this tool is already cloned in the .\resources folder of this project)
+  - UEFIExtract — https://github.com/LongSoft/UEFITool (the executable file for this tool is located in the .\resources' folder of this project)
+  - Qiling — https://github.com/qilingframework/qiling (this Python library is required; use "pip install qiling" to install)
 
 ---
 
 ## Installation
-```bash
-# Clone repository
-git clone https://github.com/GelsonFilho/BIOSInspector.git
-cd BIOSInspector
+This project does **NOT** use CMake.
 
-# Build with CMake
-cmake -S . -B build
-cmake --build build --config Release
+### ✔ Building with VS Code (recommended)
+Compilation is performed using **VS Code Build Tasks** together with **MinGW‑w64** provided by **MSYS2**.
+
+A preconfigured build task is already included in:
 ```
+.vscode/tasks.json
+```
+
+### Requirements to compile:
+- MSYS2 with MinGW‑w64 installed
+- VS Code C/C++ extension
+- Your PATH pointing to MinGW-w64 (handled automatically by MSYS2 terminal)
+
+### Installation (external documentation):
+- MSYS2 installation: https://www.msys2.org
+- MinGW-w64 usage in MSYS2: https://www.msys2.org/docs/ci/#mingw
+- VS Code tasks documentation: https://code.visualstudio.com/docs/editor/tasks
+
+### How to build in VS Code:
+1. Open the project in VS Code
+2. Open any `.cpp` file
+3. Press **Ctrl + Shift + B**
+4. Select the build task
+5. The resulting `.exe` will appear next to the `.cpp` file
 
 ---
 
 ## Usage
 ```bash
-BIOSInspector.exe   --firmware "C:\path\to\firmware.bin"   --workspace "C:\path\to\workspace"
+BIOSInspector.exe   --firmware "C:\path	oirmware.bin"   --workspace "C:\path	o\workspace"
 ```
 
 With dynamic execution:
@@ -183,9 +198,7 @@ Almeida Filho, G. J. (2025). BIOS Inspector: Object-oriented tool for static and
 ## License
 This project is licensed under the **MIT License**. See [LICENSE](./LICENSE).
 
- 
-_________________________________________________
+---
 
-**Disclaimer**
-
+## Disclaimer
 This repository was developed entirely as a personal project, outside working hours, without any use of code, confidential information, internal tools or resources from any employer. All content in this project is based solely on public information and open references. All opinions, mistakes and design decisions are the sole responsibility of the author and do not represent or bind any company, institution or organization.
