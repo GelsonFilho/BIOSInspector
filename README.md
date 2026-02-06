@@ -12,7 +12,6 @@
 - [Key Features](#key-features)
 - [Academic Work / PDF](#academic-work--pdf)
 - [Software Explanation](#software-explanation)
-- [Images & Examples](#images--examples)
 - [Diagrams](#diagrams)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -66,15 +65,6 @@ If enabled, each module is emulated under **Qiling** with a **per-module timeout
 
 ### 7) Command-line Operation & Profiles
 All interaction is via **CLI** with parameters for firmware path, workspace, threads, minimum string length, and whether to enable Qiling. This supports both one-off lab sessions and CI/CD pipelines.
-
----
-
-## Images & Examples
-Below is a small gallery of artifacts and screens.
-
-![Example artifact 1](docs/img/page3_Image32.jpg)
-
-![Example artifact 2](docs/img/page3_Image34.jpg)
 
 ---
 
