@@ -13,7 +13,7 @@
 - [Academic Work / PDF](#academic-work--pdf)
 - [Software Explanation](#software-explanation)
 - [Images & Examples](#images--examples)
-- [UML Diagram](#uml-diagram)
+- [Diagrams](#diagrams)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -78,8 +78,11 @@ Below is a small gallery of artifacts and screens.
 
 ---
 
-## UML Diagram
-![UML diagram](docs/img/uml_diagram.png)
+## Diagrams
+### UML Diagram
+![UML diagram](diagrams/out/BiosInspector_UML_basic/BiosInspector_clean.png)
+### Sequence flow
+![UML diagram](diagrams/out/BiosInspector_sequence/BiosInspector_flow.png)
 
 ---
 
@@ -89,10 +92,8 @@ Below is a small gallery of artifacts and screens.
 - The project is built using **MinGW-w64** (from **MSYS2**) through VS Code tasks.
 - **VS Code** with the **C/C++ extension**
 - **Python**: required for CHIPSEC and Qiling integration
-- [CHIPSEC](https://github.com/chipsec/chipsec) (a version of this tool is already cloned in the `.
-esources` folder of this project)
-- [UEFIExtract](https://github.com/LongSoft/UEFITool) (the executable file for this tool is located in the `.
-esources` folder of this project)
+- [CHIPSEC](https://github.com/chipsec/chipsec) (a version of this tool is already cloned in the [resources](./resources) folder of this project)
+- [UEFIExtract](https://github.com/LongSoft/UEFITool) (the executable file for this tool is located in the [resources](./resources) folder of this project)
 - [Qiling](https://github.com/qilingframework/qiling) (this Python library is required, use `pip install qiling` to install)
 
 ---
@@ -104,9 +105,7 @@ This project does **NOT** use CMake.
 Compilation is performed using **VS Code Build Tasks** together with **MinGW-w64** provided by **MSYS2**.
 
 A preconfigured build task is already included in:
-```
-.vscode/tasks.json
-```
+[.vscode/tasks.json](./.vscode/tasks.json)
 
 ### Requirements to compile:
 - MSYS2 with MinGW-w64 installed
